@@ -20,6 +20,11 @@ function listVersions(req, res) {
   github.getReleases(owner, repository).then(
     function (releases) {
       let data = releases.data.map((release) => {
+        // remove v from version
+        if (release.tag_name.startsWith("v")) {
+          release.tag_name = release.tag_name.substring(1);
+        }
+
         return {
           version: release.tag_name,
           protocols: ["5.0"],
@@ -42,7 +47,9 @@ function listVersions(req, res) {
             }),
         };
       });
-      res.json(data);
+      res.json({
+        versions: data,
+      });
     },
     function (err) {
       res.status(500).json(err);
@@ -55,35 +62,44 @@ function findPackage(req, res) {
   let repository = "terraform-provider-" + req.params.type;
 
   github.getRelease(req.params.namespace, repository, req.params.version).then(
-    function (release) {
+     (release) => {
       let assetName = `${repository}_${req.params.version}_${req.params.os}_${req.params.arch}.zip`;
 
-      res.json({
-        protocols: ["5.0"],
-        os: req.params.os,
-        arch: req.params.arch,
-        filename: assetName,
-        download_url: github.getDownloadUrl(
-          release,
-          req.params.os,
-          req.params.arch
-        ),
-        shasums_url: github.getShasumsUrl(release),
-        shasums_signature_url: github.getShasumsSignatureUrl(release),
-        signing_keys: {
-          gpg_public_keys: [
-            {
-              key_id: process.env.GPG_KEY_ID,
-              ascii_armor: process.env.GPG_KEY_ASCII_ARMOR,
+      github.getShasum(release, assetName).then(
+        (shasum) => {
+          res.json({
+            protocols: ["5.0"],
+            os: req.params.os,
+            arch: req.params.arch,
+            filename: assetName,
+            download_url: github.getDownloadUrl(
+              release,
+              req.params.os,
+              req.params.arch
+            ),
+            shasums_url: github.getShasumsUrl(release),
+            shasums_signature_url: github.getShasumsSignatureUrl(release),
+            shasum: shasum,
+            signing_keys: {
+              gpg_public_keys: [
+                {
+                  key_id: process.env.GPG_KEY_ID,
+                  ascii_armor: process.env.GPG_KEY_ASCII_ARMOR,
+                },
+              ],
             },
-          ],
+          });
         },
-      });
+        (err) => {
+          res.status(500).json(err);
+        }
+      );
     },
     function (err) {
       res.status(500).json(err);
     }
   );
+
   return;
 }
 

@@ -6,19 +6,17 @@
   "license": "MIT",
   "type": "module",
   "scripts": {
-    "build": "netlify-lambda build src",
-    "postinstall": "netlify-lambda install",
-    "start": "nodemon server-local.js"
+    "start": "nodemon index.js",
+    "dev": "nodemon server-local.js"
   },
-  "devDependencies": {
-    "netlify-lambda": "^2.0.15"
-  },
+  "devDependencies": {},
   "dependencies": {
     "dotenv": "^16.0.0",
     "encoding": "^0.1.13",
     "express": "^4.18.1",
+    "lru-cache": "^7.9.0",
+    "morgan": "^1.10.0",
     "nodemon": "^2.0.16",
-    "octokit": "^1.7.1",
-    "serverless-http": "^3.0.1"
+    "octokit": "^1.7.1"
   }
 }

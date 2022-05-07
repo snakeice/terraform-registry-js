@@ -1,13 +1,14 @@
 "use strict";
 
 import octokit from "octokit";
+import lru from "lru-cache";
 
 function getOctokit() {
-    let token = process.env.TOKEN;
-    let octo = new octokit.Octokit({
-        auth: token,
-    });
-    return octo;
+  let token = process.env.TOKEN;
+  let octo = new octokit.Octokit({
+    auth: token,
+  });
+  return octo;
 }
 
 export function getReleases(owner, repo) {
@@ -23,7 +24,7 @@ export function getRelease(owner, repo, version) {
 
   return getReleases(owner, repo).then(function (releases) {
     let release = releases.data.find(function (release) {
-      return release.tag_name === version;
+      return release.tag_name === version || release.tag_name === "v" + version;
     });
 
     if (release) {
@@ -45,18 +46,32 @@ export function getDownloadUrl(release, os, arch) {
   return asset.browser_download_url;
 }
 
-
 export function getShasumsUrl(release) {
-    let SHA256SUMS = release.data.assets.find(function (asset) {
-        return asset.name.endsWith("SHA256SUMS");
-    }); 
-    return SHA256SUMS.browser_download_url;
+  let SHA256SUMS = release.data.assets.find(function (asset) {
+    return asset.name.endsWith("SHA256SUMS");
+  });
+  return SHA256SUMS.browser_download_url;
 }
 
 export function getShasumsSignatureUrl(release) {
-    let SHA256SUMS = release.data.assets.find(function (asset) {
-        return asset.name.endsWith("SHA256SUMS.sig");
-    });
+  let SHA256SUMS = release.data.assets.find(function (asset) {
+    return asset.name.endsWith("SHA256SUMS.sig");
+  });
 
-    return SHA256SUMS.browser_download_url;
+  return SHA256SUMS.browser_download_url;
+}
+
+export async function getShasum(release, filename) {
+  let sumsUrl = getShasumsUrl(release);
+  let res = await fetch(sumsUrl);
+  if (res.status !== 200) {
+    throw new Error(`Failed to fetch ${sumsUrl}`);
+  }
+
+  let sums = await res.text();
+  let shasum = sums.split("\n").find(function (line) {
+    return line.endsWith(filename);
+  });
+
+  return shasum.split(" ")[0];
 }

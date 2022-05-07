@@ -1,12 +1,13 @@
-import exp from "constants";
 import express from "express";
-import serverless from "serverless-http";
 import 'dotenv/config';
 
+
+import morgan from "morgan";
 
 const app = new express();
 
 app.use(express.json());
+app.use(morgan('dev'));
 
 
 const router = express.Router();
@@ -24,5 +25,4 @@ registry(router);
 app.use("/.netlify/functions/", router);
 app.use(router)
 
-app.handler = serverless(app);
 export default app;
