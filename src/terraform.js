@@ -68,6 +68,7 @@ function findPackage(req, res) {
       let assetName = `${repository}_${req.params.version}_${req.params.os}_${req.params.arch}.zip`;
 
       github.getShasum(release, assetName).then(
+          
         (shasum) => {
           res.json({
             protocols: ["5.0"],
