@@ -52,13 +52,15 @@ function listVersions(req, res) {
       });
     },
     function (err) {
-      res.status(500).json(err);
+      res.status(404).json({
+        error: "Provider not found",
+        err: err,
+      });
     }
   );
 }
 
 function findPackage(req, res) {
-  //   "terraform-provider-random_2.0.0_linux_amd64.zip"
   let repository = "terraform-provider-" + req.params.type;
 
   github.getRelease(req.params.namespace, repository, req.params.version).then(
@@ -91,12 +93,19 @@ function findPackage(req, res) {
           });
         },
         (err) => {
-          res.status(500).json(err);
+            res.status(404).json({
+                error: "Provider sha sum not found",
+                err: err,
+            });
         }
       );
     },
     function (err) {
-      res.status(500).json(err);
+    console.log(`Error: ${err}`);
+    res.status(404).json({
+        error: "Provider version not found",
+        err: err,
+    });
     }
   );
 

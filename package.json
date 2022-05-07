@@ -9,14 +9,15 @@
     "start": "nodemon index.js",
     "dev": "nodemon server-local.js"
   },
-  "devDependencies": {},
   "dependencies": {
+    "clarify": "^2.1.0",
     "dotenv": "^16.0.0",
     "encoding": "^0.1.13",
     "express": "^4.18.1",
     "lru-cache": "^7.9.0",
     "morgan": "^1.10.0",
     "nodemon": "^2.0.16",
-    "octokit": "^1.7.1"
+    "octokit": "^1.7.1",
+    "trace": "^3.1.1"
   }
 }

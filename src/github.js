@@ -19,24 +19,23 @@ export function getReleases(owner, repo) {
   });
 }
 
-export function getRelease(owner, repo, version) {
+export async function getRelease(owner, repo, version) {
   let octo = getOctokit();
 
-  return getReleases(owner, repo).then(function (releases) {
-    let release = releases.data.find(function (release) {
-      return release.tag_name === version || release.tag_name === "v" + version;
+  const releases = await getReleases(owner, repo);
+    let release = releases.data.find(function (release_1) {
+        return release_1.tag_name === version || release_1.tag_name === "v" + version;
     });
-
     if (release) {
-      return octo.request("GET /repos/{owner}/{repo}/releases/{id}", {
-        owner: owner,
-        repo: repo,
-        id: release.id,
-      });
+        return octo.request("GET /repos/{owner}/{repo}/releases/{id}", {
+            owner: owner,
+            repo: repo,
+            id: release.id,
+        });
     } else {
-      return Promise.reject(new Error(`Release ${version} not found`));
+        console.log("release not found");
+        return Promise.reject(new Error(`Release ${version} not found`));
     }
-  });
 }
 
 export function getDownloadUrl(release, os, arch) {
@@ -50,7 +49,11 @@ export function getShasumsUrl(release) {
   let SHA256SUMS = release.data.assets.find(function (asset) {
     return asset.name.endsWith("SHA256SUMS");
   });
-  return SHA256SUMS.browser_download_url;
+  if (SHA256SUMS) {
+    return SHA256SUMS.browser_download_url;
+  } else {
+    return null;
+  }
 }
 
 export function getShasumsSignatureUrl(release) {
@@ -58,20 +61,34 @@ export function getShasumsSignatureUrl(release) {
     return asset.name.endsWith("SHA256SUMS.sig");
   });
 
-  return SHA256SUMS.browser_download_url;
+  if (SHA256SUMS) {
+    return SHA256SUMS.browser_download_url;
+  } else {
+    return null;
+  }
 }
 
 export async function getShasum(release, filename) {
   let sumsUrl = getShasumsUrl(release);
   let res = await fetch(sumsUrl);
   if (res.status !== 200) {
-    throw new Error(`Failed to fetch ${sumsUrl}`);
+    return Promise.reject(new Error(`Failed to fetch ${sumsUrl}`));
   }
 
+  console.log(`Fetched ${sumsUrl}`);
+
   let sums = await res.text();
-  let shasum = sums.split("\n").find(function (line) {
+  let lines = sums.split("\n");
+  let shasum = lines.find(function (line) {
     return line.endsWith(filename);
   });
 
-  return shasum.split(" ")[0];
+  if (shasum) {
+    console.log(`Found ${filename} in ${sumsUrl}`);
+    return shasum.split(" ")[0];
+  } else {
+    return Promise.reject(
+      new Error(`Failed to find ${filename} in ${sumsUrl}`)
+    );
+  }
 }
